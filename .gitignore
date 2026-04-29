@@ -1,0 +1,4 @@
+.env
+target/
+.idea
+docker-compose

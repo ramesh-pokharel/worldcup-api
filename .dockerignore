@@ -1,0 +1,12 @@
+target/
+.idea/
+*.iml
+
+#Local-only files
+docker-compose.yml
+railway.toml
+.env
+*.md
+#Git
+.git
+.gitignore

@@ -1,0 +1,10 @@
+spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 5        # Neon free tier: shared pool, keep low
+      connection-timeout: 20000   # 20 s — Neon cold-start can be slow
+
+logging:
+  level:
+    root: WARN
+    com.worldcup: INFO

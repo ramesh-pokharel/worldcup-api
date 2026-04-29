@@ -1,0 +1,9 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/worldcup
+    username: postgres
+    password: postgres1
+
+app:
+  jwt:
+    secret: dGhpcyBpcyBhIHNlY3JldCBrZXkgZm9yIHdvcmxkY3VwMjAyNmxvY2Fs
