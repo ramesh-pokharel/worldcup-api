@@ -7,6 +7,7 @@ public record PlayerDto(
     Long teamId,
     String teamName,
     String flagEmoji,
+    String flagCode,
     String name,
     LocalDate dateOfBirth,
     String nationality,

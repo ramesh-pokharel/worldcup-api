@@ -2,7 +2,11 @@ spring:
   datasource:
     hikari:
       maximum-pool-size: 5        # Neon free tier: shared pool, keep low
-      connection-timeout: 20000   # 20 s — Neon cold-start can be slow
+      minimum-idle: 0             # allow pool to drain to 0 — lets Neon suspend
+      idle-timeout: 10000         # close idle connections after 10 s
+      max-lifetime: 60000         # retire connections after 60 s
+      keepalive-time: 0           # disable keepalive ping (prevents Neon suspend)
+      connection-timeout: 30000   # 30 s — enough for Neon cold-start to complete
 
 logging:
   level:
