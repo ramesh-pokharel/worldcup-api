@@ -19,6 +19,7 @@ public record MatchDto(
     String team2Kit,
     String stadiumName,
     String stadiumCity,
+    Long stadiumId,
     OffsetDateTime scheduledAt,
     String status,
     Integer team1Score,

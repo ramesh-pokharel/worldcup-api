@@ -31,5 +31,6 @@ public class PredictionLeaderboard {
     private Integer totalPoints;
     private Integer exactScores;
     private Integer correctResults;
+    private Integer tournamentPoints;
     private OffsetDateTime updatedAt;
 }

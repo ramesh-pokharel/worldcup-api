@@ -45,10 +45,12 @@ public class SecurityConfig {
                     "/api/teams/**",
                     "/api/players/**",
                     "/api/matches/**",
+                    "/api/stadiums/**",
                     "/api/comments/**",
                     "/api/predictions",       // shows own pick only if SCHEDULED; all if LIVE/FINISHED
                     "/api/leaderboard",
-                    "/api/community/**"
+                    "/api/community/**",
+                    "/api/tournament-predictions/all"
                 ).permitAll()
                 // Admin routes — role checked here AND via @PreAuthorize on the method
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
@@ -66,7 +68,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsSource() {
         CorsConfiguration cfg = new CorsConfiguration();
         cfg.setAllowedOrigins(List.of(props.cors().allowedOrigins()));
-        cfg.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));
+        cfg.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
         cfg.setAllowedHeaders(List.of("*"));
         cfg.setAllowCredentials(true);
         cfg.setMaxAge(3600L);

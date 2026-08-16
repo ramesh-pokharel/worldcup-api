@@ -36,6 +36,7 @@ public class TournamentPrediction {
     @JoinColumn(name = "predicted_top_scorer")
     private Player predictedTopScorer;
 
+    private Short pointsEarned;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
 }

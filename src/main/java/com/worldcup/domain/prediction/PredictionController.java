@@ -3,6 +3,7 @@ package com.worldcup.domain.prediction;
 import com.worldcup.domain.match.Match;
 import com.worldcup.domain.match.MatchRepository;
 import com.worldcup.domain.match.MatchStatus;
+import com.worldcup.domain.tournament.TournamentPredictionRepository;
 import com.worldcup.domain.user.User;
 import com.worldcup.domain.user.UserRepository;
 import jakarta.validation.Valid;
@@ -26,6 +27,7 @@ public class PredictionController {
 
     private final PredictionRepository predRepo;
     private final PredictionLeaderboardRepository leaderboardRepo;
+    private final TournamentPredictionRepository tpRepo;
     private final MatchRepository matchRepo;
     private final UserRepository userRepo;
     private final PredictionMapper predMapper;
@@ -158,22 +160,48 @@ public class PredictionController {
         }
         predRepo.saveAll(predictions);
 
-        // Rebuild leaderboard from scratch
+        // Rebuild leaderboard from scratch (match predictions only first)
         leaderboardRepo.deleteAll();
         predRepo.findAll().stream()
                 .filter(p -> p.getMatch().getStatus() == MatchStatus.FINISHED)
                 .collect(java.util.stream.Collectors.groupingBy(p -> p.getUser().getId()))
                 .forEach((uid, preds) -> {
-                    User user = preds.get(0).getUser();
+                    // Load a fresh User reference — using the lazy proxy from Prediction causes
+                    // Hibernate 7 AssertionFailure: null identifier on @MapsId merge()
+                    User user = userRepo.findById(uid).orElseThrow();
                     int total   = preds.stream().mapToInt(p -> p.getPointsEarned() != null ? p.getPointsEarned() : 0).sum();
                     int exact   = (int) preds.stream().filter(p -> p.getPointsEarned() != null && p.getPointsEarned() == 3).count();
                     int correct = (int) preds.stream().filter(p -> p.getPointsEarned() != null && p.getPointsEarned() == 1).count();
+                    // Omit userId so isNew()=true → persist() instead of merge(), letting @MapsId derive the PK
                     leaderboardRepo.save(PredictionLeaderboard.builder()
-                            .userId(uid).user(user)
+                            .user(user)
                             .totalPoints(total).exactScores(exact).correctResults(correct)
+                            .tournamentPoints(0)
                             .updatedAt(OffsetDateTime.now())
                             .build());
                 });
+
+        // Second pass: add tournament prediction points
+        tpRepo.findByPointsEarnedIsNotNull().forEach(tp -> {
+            int pts = tp.getPointsEarned();
+            Long uid = tp.getUser().getId();
+            leaderboardRepo.findById(uid).ifPresentOrElse(
+                lb -> {
+                    lb.setTournamentPoints(pts);
+                    lb.setTotalPoints(lb.getTotalPoints() + pts);
+                    leaderboardRepo.save(lb);
+                },
+                () -> {
+                    User user = userRepo.findById(uid).orElseThrow();
+                    leaderboardRepo.save(PredictionLeaderboard.builder()
+                            .user(user)
+                            .totalPoints(pts).exactScores(0).correctResults(0)
+                            .tournamentPoints(pts)
+                            .updatedAt(OffsetDateTime.now())
+                            .build());
+                }
+            );
+        });
 
         return ResponseEntity.ok().build();
     }

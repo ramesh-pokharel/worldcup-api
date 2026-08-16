@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/tournament-predictions")
@@ -28,6 +29,31 @@ public class TournamentPredictionController {
     private final TournamentPredictionMapper tpMapper;
 
     record TournamentRequest(Long predictedWinnerId, Long predictedRunnerUpId, Long predictedTopScorerId) {}
+
+    @GetMapping("/all")
+    public List<TournamentPredictionSummaryDto> getAll() {
+        return tpRepo.findAllByOrderByUserIdAsc().stream()
+                .map(tp -> new TournamentPredictionSummaryDto(
+                        tp.getUser().getId(),
+                        tp.getUser().getDisplayName(),
+                        tp.getPredictedWinner()   != null ? tp.getPredictedWinner().getCountry().getName()  : null,
+                        tp.getPredictedWinner()   != null ? flagCode(tp.getPredictedWinner())               : null,
+                        tp.getPredictedRunnerUp() != null ? tp.getPredictedRunnerUp().getCountry().getName(): null,
+                        tp.getPredictedRunnerUp() != null ? flagCode(tp.getPredictedRunnerUp())             : null,
+                        tp.getPredictedTopScorer() != null ? tp.getPredictedTopScorer().getName()           : null,
+                        tp.getPredictedTopScorer() != null && tp.getPredictedTopScorer().getTeam() != null
+                                ? tp.getPredictedTopScorer().getTeam().getCountry().getName() : null,
+                        tp.getPointsEarned()
+                ))
+                .toList();
+    }
+
+    private static String flagCode(Team team) {
+        if (team == null || team.getCountry() == null) return null;
+        return "ENG".equals(team.getCountry().getCodeIso3())
+                ? "gb-eng"
+                : team.getCountry().getCodeIso2().toLowerCase();
+    }
 
     @GetMapping("/me")
     public ResponseEntity<TournamentPredictionDto> getMyPrediction(
@@ -71,13 +97,24 @@ public class TournamentPredictionController {
         Team runnerUp = req.predictedRunnerUpId()  != null ? teamRepo.findById(req.predictedRunnerUpId()).orElseThrow() : null;
         Player scorer = req.predictedTopScorerId() != null ? playerRepo.findById(req.predictedTopScorerId()).orElseThrow() : null;
 
+        Short existingPoints = null;
+        OffsetDateTime existingCreatedAt = null;
+        if (existingId != null) {
+            TournamentPrediction prior = tpRepo.findById(existingId).orElse(null);
+            if (prior != null) {
+                existingPoints    = prior.getPointsEarned();
+                existingCreatedAt = prior.getCreatedAt();
+            }
+        }
+
         return TournamentPrediction.builder()
                 .id(existingId)
                 .user(user)
                 .predictedWinner(winner)
                 .predictedRunnerUp(runnerUp)
                 .predictedTopScorer(scorer)
-                .createdAt(existingId == null ? OffsetDateTime.now() : null)
+                .pointsEarned(existingPoints)
+                .createdAt(existingId == null ? OffsetDateTime.now() : existingCreatedAt)
                 .updatedAt(OffsetDateTime.now())
                 .build();
     }

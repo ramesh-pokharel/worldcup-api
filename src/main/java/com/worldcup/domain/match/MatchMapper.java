@@ -21,6 +21,7 @@ public interface MatchMapper {
     @Mapping(source = "team2.kitPrimary",         target = "team2Kit")
     @Mapping(source = "stadium.name",            target = "stadiumName")
     @Mapping(source = "stadium.city",            target = "stadiumCity")
+    @Mapping(source = "stadium.id",              target = "stadiumId")
     // MapStruct calls .name() on the enum automatically → String
     @Mapping(source = "stage",                   target = "stage")
     @Mapping(source = "status",                  target = "status")

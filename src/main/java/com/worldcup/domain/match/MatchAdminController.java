@@ -4,6 +4,8 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
+
+import java.time.OffsetDateTime;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -28,7 +30,15 @@ public class MatchAdminController {
 
         // Only set when the match ends level and goes to a penalty shootout
         @Min(0) Integer team1ScorePen,
-        @Min(0) Integer team2ScorePen
+        @Min(0) Integer team2ScorePen,
+
+        // Optional — assign teams to knockout TBD slots
+        Long team1Id,
+        Long team2Id,
+
+        // Optional — update schedule and venue
+        OffsetDateTime scheduledAt,
+        Long stadiumId
     ) {}
 
     @Transactional
@@ -61,6 +71,14 @@ public class MatchAdminController {
             req.team1ScorePen(),
             req.team2ScorePen()
         );
+
+        if (req.team1Id() != null || req.team2Id() != null) {
+            matchRepo.updateTeams(id, req.team1Id(), req.team2Id());
+        }
+
+        if (req.scheduledAt() != null || req.stadiumId() != null) {
+            matchRepo.updateSchedule(id, req.scheduledAt(), req.stadiumId());
+        }
 
         // Re-fetch with full associations so the response DTO is complete
         Match updated = matchRepo.findById(id).orElseThrow();

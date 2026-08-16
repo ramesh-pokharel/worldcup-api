@@ -6,5 +6,6 @@ public record LeaderboardDto(
     String avatarUrl,
     Integer totalPoints,
     Integer exactScores,
-    Integer correctResults
+    Integer correctResults,
+    Integer tournamentPoints
 ) {}

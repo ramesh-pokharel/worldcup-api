@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -54,7 +55,7 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
     @Modifying
     @Query(nativeQuery = true, value = """
         UPDATE matches
-        SET status          = :status::match_status,
+        SET status          = CAST(:status AS match_status),
             home_score      = :team1Score,
             away_score      = :team2Score,
             home_score_pen  = :team1ScorePen,
@@ -69,5 +70,33 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
         @org.springframework.data.repository.query.Param("team2Score")    Integer team2Score,
         @org.springframework.data.repository.query.Param("team1ScorePen") Integer team1ScorePen,
         @org.springframework.data.repository.query.Param("team2ScorePen") Integer team2ScorePen
+    );
+
+    @Modifying
+    @Query(nativeQuery = true, value = """
+        UPDATE matches
+        SET home_team_id = COALESCE(:team1Id, home_team_id),
+            away_team_id = COALESCE(:team2Id, away_team_id),
+            updated_at   = NOW()
+        WHERE id = :id
+        """)
+    void updateTeams(
+        @org.springframework.data.repository.query.Param("id")      Long id,
+        @org.springframework.data.repository.query.Param("team1Id") Long team1Id,
+        @org.springframework.data.repository.query.Param("team2Id") Long team2Id
+    );
+
+    @Modifying
+    @Query(nativeQuery = true, value = """
+        UPDATE matches
+        SET scheduled_at = COALESCE(CAST(:scheduledAt AS timestamptz), scheduled_at),
+            stadium_id   = COALESCE(:stadiumId, stadium_id),
+            updated_at   = NOW()
+        WHERE id = :id
+        """)
+    void updateSchedule(
+        @org.springframework.data.repository.query.Param("id")          Long           id,
+        @org.springframework.data.repository.query.Param("scheduledAt") OffsetDateTime scheduledAt,
+        @org.springframework.data.repository.query.Param("stadiumId")   Long           stadiumId
     );
 }
